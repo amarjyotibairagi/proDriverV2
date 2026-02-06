@@ -39,3 +39,14 @@ next-env.d.ts
 .env
 reference_only/
 generated/
+content-output.json
+debug-output.txt
+project_details.txt
+verify-seed.ts
+check-notifs.ts
+check-notifs.js
+check_db.js
+action.md
+api_reference.md
+AI_RULES.md
+*.tsbuildinfo
