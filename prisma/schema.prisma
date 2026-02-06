@@ -1,0 +1,226 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- ENUMS (Postgres Native) ---
+
+enum Role {
+  BASIC
+  ADMIN
+}
+
+enum TrainingStatus {
+  NOT_STARTED
+  ONGOING
+  COMPLETED
+}
+
+enum TestStatus {
+  NOT_STARTED
+  ONGOING
+  PASSED
+  FAILED
+}
+
+enum LocationType {
+  HOME
+  ASSIGNED
+}
+
+// --- USER MANAGEMENT ---
+
+model User {
+  id                 String   @id @default(cuid())
+  employee_id        String   @unique
+  password_hash      String?
+  
+  // Role is now a strict Enum
+  role               Role     @default(BASIC)
+  
+  full_name          String
+  company            String?  // Mandatory for new users, mapped from signup
+  email              String?
+  mobile_number      String?
+  preferred_language String   @default("en")
+
+  // --- SHADOW ACCOUNT LOGIC ---
+  is_test_account    Boolean  @default(false)
+  
+  linked_parent_id   String?
+  linked_parent      User?    @relation("AdminShadow", fields: [linked_parent_id], references: [id])
+  shadow_accounts    User[]   @relation("AdminShadow")
+
+  // --- MASTER DATA RELATIONS ---
+  department_id      String?
+  department         Department? @relation(fields: [department_id], references: [id])
+  
+  designation_id     String?
+  designation        Designation? @relation(fields: [designation_id], references: [id])
+  
+  home_location_id   String?
+  home_location      Location?   @relation("HomeLoc", fields: [home_location_id], references: [id])
+  
+  assigned_location_id String?
+  assigned_location  Location?   @relation("AssignedLoc", fields: [assigned_location_id], references: [id])
+
+  assignments_received TrainingAssignment[] @relation("AssignedTo")
+  assignments_given    TrainingAssignment[] @relation("AssignedBy")
+  notifications        Notification[]
+  audit_actions        AuditLog[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("users")
+}
+
+// --- MODULE MANAGEMENT ---
+
+model Module {
+  id               Int      @id @default(autoincrement())
+  title            String
+  slug             String   @unique
+  content          Json?
+  is_published     Boolean  @default(false)
+
+  // Existing fields
+  description      String?
+  file_source      String   
+  thumbnail_url    String?
+  
+  total_marks      Int      @default(0)
+  pass_marks       Int      @default(0)
+  duration_minutes Int      @default(0)
+  
+  is_active        Boolean  @default(true)
+  
+  assignments      TrainingAssignment[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  type             ModuleType @default(TRAINING)
+  
+  linked_module_id Int?
+  linked_module    Module?    @relation("ModuleLinks", fields: [linked_module_id], references: [id])
+  linked_by        Module[]   @relation("ModuleLinks")
+
+  @@map("modules")
+}
+
+enum ModuleType {
+  TRAINING
+  TEST
+}
+
+// --- TRAINING & PROGRESS ---
+
+model TrainingAssignment {
+  id               String   @id @default(cuid())
+  
+  user_id          String
+  user             User     @relation("AssignedTo", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  module_id        Int
+  module           Module   @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  
+  assigned_by_id   String?
+  assigned_by      User?    @relation("AssignedBy", fields: [assigned_by_id], references: [id])
+  
+  assigned_date    DateTime @default(now())
+  due_date         DateTime?
+
+  // Status is now a strict Enum
+  training_status  TrainingStatus @default(NOT_STARTED)
+  test_status      TestStatus     @default(NOT_STARTED)
+  
+  current_slide    Int      @default(1)
+  marks_obtained   Int      @default(0)
+  completion_date  DateTime?
+  certificate_id   String?
+
+  updatedAt        DateTime @updatedAt
+
+  @@map("training_assignments")
+  @@unique([user_id, module_id])
+}
+
+// --- MASTER DATA ---
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+
+  @@map("departments")
+}
+
+model Designation {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+
+  @@map("designations")
+}
+
+model Location {
+  id            String       @id @default(cuid())
+  name          String
+  type          LocationType
+  
+  users_home    User[]       @relation("HomeLoc")
+  users_assigned User[]      @relation("AssignedLoc")
+  
+  createdAt     DateTime     @default(now())
+
+  @@map("locations")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   
+  actor_id    String
+  actor       User     @relation(fields: [actor_id], references: [id])
+  target_id   String?  
+  
+  // Changed from String? to Json?
+  metadata    Json?    
+  
+  timestamp   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// --- NOTIFICATIONS ---
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // 'CRITICAL' | 'OPERATIONAL' | 'INFO'
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  
+  // Target Audience
+  userId    String?  // For specific user notifications
+  user      User?    @relation(fields: [userId], references: [id])
+  targetRole Role?   // For role-based notifications (ADMIN/BASIC)
+  
+  // Context
+  link      String?
+  metadata  Json?
+  
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
