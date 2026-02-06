@@ -101,6 +101,7 @@ export interface RegisterData {
   name: string
   company: string
   designation: string // ID
+  team: string        // ID
   depot: string      // ID
   assignedArea: string // ID
   email: string
@@ -111,6 +112,11 @@ export interface RegisterData {
 export async function registerUser(data: RegisterData) {
   try {
     if (!prisma) throw new Error("Prisma not initialized")
+
+    // 0. Validation
+    if (!data.mobile || data.mobile.trim() === "") {
+      return { success: false, error: "Mobile number is required" }
+    }
 
     // 1. Check if User Exists
     const existing = await prisma.user.findUnique({
@@ -139,6 +145,7 @@ export async function registerUser(data: RegisterData) {
         mobile_number: encryptedMobile, // Stored Encrypted
         password_hash: hashedPassword,
         designation_id: data.designation,
+        team_id: data.team, // Use team_id (renamed from department_id)
         home_location_id: data.depot,
         assigned_location_id: data.assignedArea,
         role: 'BASIC'

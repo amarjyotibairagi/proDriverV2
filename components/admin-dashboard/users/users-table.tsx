@@ -22,7 +22,8 @@ import {
     TrendingUp,
     FileText,
     Upload,
-    Download
+    Download,
+    Building
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AddUserPopup } from "@/components/admin-dashboard/users/add-user-popup"
@@ -39,7 +40,8 @@ interface UserData {
     email: string | null
     mobile_number: string | null
     role: string
-    department?: { id: string; name: string } | null
+    team?: { id: string; name: string } | null
+    designation?: { id: string; name: string } | null
     company?: string | null
     assigned_location?: { id: string; name: string } | null
     home_location?: { id: string; name: string } | null
@@ -54,14 +56,14 @@ interface UserData {
 
 interface FilterState {
     roles: string[]
-    departments: string[]
+    teams: string[]
     homeLocations: string[]
     assignedLocations: string[]
 }
 
 const INITIAL_FILTERS: FilterState = {
     roles: [],
-    departments: [],
+    teams: [],
     homeLocations: [],
     assignedLocations: []
 }
@@ -227,10 +229,12 @@ export function UsersTable({
                 return false
             }
 
-            // 3. Department Filter
-            if (activeFilters.departments.length > 0 && !activeFilters.departments.includes(user.department?.name || "Unassigned")) {
+            // 3. Team Filter
+            if (activeFilters.teams.length > 0 && !activeFilters.teams.includes(user.team?.id || "Unassigned")) {
                 return false
             }
+
+            // 3.5 Designation Filter (Optional if needed, but adding Team for now)
 
             // 4. Home Location Filter (Depot)
             if (activeFilters.homeLocations.length > 0 && !activeFilters.homeLocations.includes(user.home_location?.name || "Unassigned")) {
@@ -320,14 +324,14 @@ export function UsersTable({
                                             ))}
                                         </FilterSection>
 
-                                        {/* Designation / Team */}
-                                        <FilterSection title="Unit / Designation">
-                                            {options?.departments?.map((dept: any) => (
+                                        {/* Team */}
+                                        <FilterSection title="Team Assignment">
+                                            {options?.teams?.map((team: any) => (
                                                 <FilterCheckbox
-                                                    key={dept.id}
-                                                    label={dept.name}
-                                                    checked={tempFilters.departments.includes(dept.id)}
-                                                    onChange={() => handleFilterChange('departments', dept.id)}
+                                                    key={team.id}
+                                                    label={team.name}
+                                                    checked={tempFilters.teams.includes(team.id)}
+                                                    onChange={() => handleFilterChange('teams', team.id)}
                                                 />
                                             ))}
                                         </FilterSection>
@@ -553,9 +557,15 @@ export function UsersTable({
                                                     <Shield className="w-3 h-3" />
                                                     {user.role}
                                                 </div>
-                                                <div className="flex items-center gap-1.5 px-3 py-0 relative z-10">
-                                                    <Briefcase className="w-3.5 h-3.5 text-slate-600" />
-                                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{user.department?.name || "Unassigned"}</span>
+                                                <div className="flex flex-col gap-1 px-3 py-0 relative z-10">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Building className="w-3.5 h-3.5 text-slate-600" />
+                                                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{user.team?.name || "No Team"}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Briefcase className="w-3.5 h-3.5 text-slate-600" />
+                                                        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">{user.designation?.name || "No Designation"}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

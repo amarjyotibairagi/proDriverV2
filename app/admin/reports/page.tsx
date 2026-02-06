@@ -25,7 +25,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             <Sidebar />
 
             <main className="lg:ml-64 min-h-screen">
-                <div className="p-4 sm:p-8 lg:p-12 pt-20 lg:pt-10 max-w-[1600px] mx-auto relative z-10">
+                <div className="p-4 sm:p-8 lg:p-12 pt-20 lg:pt-10 max-w-[1600px] mx-auto relative">
                     <Suspense fallback={<div className="h-20" />}>
                         <Header />
                     </Suspense>

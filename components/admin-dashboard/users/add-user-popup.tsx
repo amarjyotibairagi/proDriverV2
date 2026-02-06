@@ -14,7 +14,8 @@ export function AddUserPopup({ isOpen, onClose, options }: any) {
         company: "Mowasalat",
         mobile: "",
         role: "BASIC",
-        departmentId: "",
+        teamId: "",
+        designationId: "",
         locationId: "",
         homeLocationId: ""
     })
@@ -33,7 +34,7 @@ export function AddUserPopup({ isOpen, onClose, options }: any) {
             setFormData({
                 employeeId: "", name: "", email: "", mobile: "",
                 company: "Mowasalat",
-                role: "BASIC", departmentId: "", locationId: "", homeLocationId: ""
+                role: "BASIC", teamId: "", designationId: "", locationId: "", homeLocationId: ""
             })
         } else {
             alert("Registration Error: " + result.error)
@@ -88,7 +89,7 @@ export function AddUserPopup({ isOpen, onClose, options }: any) {
                         <InputGroup label="Full Name" icon={User} value={formData.name} onChange={(e: any) => setFormData({ ...formData, name: e.target.value })} required />
                         <InputGroup label="Email Address" icon={Mail} type="email" value={formData.email} onChange={(e: any) => setFormData({ ...formData, email: e.target.value })} required />
                         <InputGroup label="Command Company" icon={Building} value={formData.company} onChange={(e: any) => setFormData({ ...formData, company: e.target.value })} required />
-                        <InputGroup label="Mobile Number" icon={Phone} value={formData.mobile} onChange={(e: any) => setFormData({ ...formData, mobile: e.target.value })} />
+                        <InputGroup label="Mobile Number" icon={Phone} value={formData.mobile} onChange={(e: any) => setFormData({ ...formData, mobile: e.target.value })} required />
 
                         {/* Role Select */}
                         <div className="group">
@@ -107,13 +108,22 @@ export function AddUserPopup({ isOpen, onClose, options }: any) {
                             </div>
                         </div>
 
-                        {/* Department Select */}
+                        {/* Team Select */}
                         <SelectGroup
-                            label="Department / Team"
+                            label="Team"
                             icon={Building}
-                            value={formData.departmentId}
-                            onChange={(e: any) => setFormData({ ...formData, departmentId: e.target.value })}
-                            options={options.departments}
+                            value={formData.teamId}
+                            onChange={(e: any) => setFormData({ ...formData, teamId: e.target.value })}
+                            options={options.teams}
+                        />
+
+                        {/* Designation Select */}
+                        <SelectGroup
+                            label="Designation"
+                            icon={Briefcase}
+                            value={formData.designationId}
+                            onChange={(e: any) => setFormData({ ...formData, designationId: e.target.value })}
+                            options={options.designations}
                         />
 
                         {/* Assigned Location */}

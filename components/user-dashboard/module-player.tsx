@@ -53,6 +53,7 @@ export function ModulePlayer({
     const [audioEnded, setAudioEnded] = useState(false);
     const [audioFailed, setAudioFailed] = useState(false);
     const [animationsDone, setAnimationsDone] = useState(false);
+    const [audioDuration, setAudioDuration] = useState(0);
     const [quizSelections, setQuizSelections] = useState<Record<string, string>>({});
     const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
@@ -344,22 +345,50 @@ export function ModulePlayer({
     // Animations
     const elementAnimations = useMemo(() => {
         if (!sourceSlide?.elements) return [];
-        return sourceSlide.elements.map((_: any, idx: number) => {
-            return getRandomEntryAnimation(idx * 0.5, 0.5);
+
+        const nonImageElements = sourceSlide.elements.filter((el: any) => el.type !== 'image');
+        const elementCount = nonImageElements.length;
+
+        const interval = audioDuration > 0
+            ? (audioDuration / elementCount)
+            : 0.5;
+
+        let lastNonImageDelay = 0;
+        let speechIdx = 0;
+
+        return sourceSlide.elements.map((el: any) => {
+            if (el.type !== 'image') {
+                lastNonImageDelay = speechIdx * interval;
+                speechIdx++;
+                return getRandomEntryAnimation(lastNonImageDelay, 0.5);
+            } else {
+                // Images appear with the PREVIOUS text/quiz element
+                return getRandomEntryAnimation(lastNonImageDelay, 0.5);
+            }
         });
-    }, [sourceSlide?.elements]);
+    }, [sourceSlide?.elements, audioDuration]);
 
     useEffect(() => {
         if (hasStarted && sourceSlide?.elements) {
-            const totalDuration = (sourceSlide.elements.length * 0.5) + 0.5;
+            const nonImageElements = sourceSlide.elements.filter((el: any) => el.type !== 'image');
+            const elementCount = nonImageElements.length;
+
+            const interval = audioDuration > 0
+                ? (audioDuration / elementCount)
+                : 0.5;
+
+            // Max delay is for the last element: (N-1) * interval
+            const maxDelayAt = (elementCount > 0 ? (elementCount - 1) : 0) * interval;
+            const totalWaitTime = maxDelayAt + 0.5;
+
             const timer = setTimeout(() => {
                 setAnimationsDone(true);
-            }, totalDuration * 1000);
+            }, totalWaitTime * 1000);
             return () => clearTimeout(timer);
         } else {
             setAnimationsDone(true);
         }
-    }, [hasStarted, sourceSlide]);
+    }, [hasStarted, sourceSlide, audioDuration]);
 
     // Auto Play Audio
     useEffect(() => {
@@ -752,8 +781,16 @@ export function ModulePlayer({
                     <audio
                         ref={audioRef}
                         src={currentAudioUrl || undefined}
+                        onLoadedMetadata={(e) => {
+                            const duration = e.currentTarget.duration;
+                            console.log(`[ModulePlayer] Audio Duration: ${duration}s`);
+                            setAudioDuration(duration);
+                        }}
                         onEnded={() => setAudioEnded(true)}
-                        onError={() => setAudioFailed(true)}
+                        onError={() => {
+                            setAudioFailed(true);
+                            setAudioDuration(0);
+                        }}
                         className="hidden"
                     />
 

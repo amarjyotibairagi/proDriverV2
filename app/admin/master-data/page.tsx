@@ -8,7 +8,7 @@ import { SectionHeader } from "@/components/admin-dashboard/section-header";
 import { DynamicBackground } from "@/components/admin-dashboard/dynamic-background";
 
 export default async function MasterDataPage() {
-    const { departments, designations, locations } = await getMasterData();
+    const { teams, designations, locations } = await getMasterData();
 
     return (
         <div className="min-h-screen bg-[#020617] selection:bg-teal-500/30 selection:text-teal-200">
@@ -28,7 +28,7 @@ export default async function MasterDataPage() {
                     />
 
                     <MasterDataManager
-                        departments={departments}
+                        teams={teams}
                         designations={designations}
                         locations={locations}
                     />

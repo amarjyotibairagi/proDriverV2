@@ -6,7 +6,7 @@ import { Search, Edit2, Trash2, MapPin, Users, Briefcase, LayoutGrid, Database }
 
 interface MasterDataTableProps {
     data: any[]
-    type: 'DEPARTMENT' | 'DESIGNATION' | 'LOCATION'
+    type: 'TEAM' | 'DESIGNATION' | 'LOCATION'
     onEdit: (item: any) => void
     onDelete: (id: string) => void
 }
@@ -91,7 +91,7 @@ export function MasterDataTable({ data, type, onEdit, onDelete }: MasterDataTabl
                                         <td className="p-8 pl-10">
                                             <div className="flex items-center gap-5 relative z-10">
                                                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 flex items-center justify-center shadow-2xl group-hover:rotate-3 transition-transform">
-                                                    {type === 'LOCATION' ? <MapPin className="w-5 h-5 text-indigo-400" /> : <LayoutGrid className="w-5 h-5 text-emerald-400" />}
+                                                    {type === 'LOCATION' ? <MapPin className="w-5 h-5 text-indigo-400" /> : type === 'TEAM' ? <Users className="w-5 h-5 text-teal-400" /> : <Briefcase className="w-5 h-5 text-emerald-400" />}
                                                 </div>
                                                 <div>
                                                     <div className="text-[15px] font-black text-slate-200 group-hover:text-teal-400 transition-colors uppercase italic tracking-tighter">{item.name}</div>

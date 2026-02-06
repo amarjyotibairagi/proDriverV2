@@ -8,7 +8,7 @@ interface ManageItemPopupProps {
     isOpen: boolean
     onClose: () => void
     item: any | null
-    type: 'DEPARTMENT' | 'DESIGNATION' | 'LOCATION'
+    type: 'TEAM' | 'DESIGNATION' | 'LOCATION'
     fixedLocationType?: 'HOME' | 'ASSIGNED'
     onSave: (data: any) => Promise<{ success: boolean, error?: string }>
 }

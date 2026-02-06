@@ -22,7 +22,7 @@ export default function LanguageSelectionPage() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 mb-8 sm:mb-12 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 mb-8 sm:mb-12 relative">
         <div className="w-full max-w-md flex flex-col gap-6">
           {/* Hero Title Section */}
           <HeroTitle />

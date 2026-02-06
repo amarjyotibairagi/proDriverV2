@@ -33,8 +33,8 @@ export async function getImportPresignedUrl(fileName: string, contentType: strin
 export async function processUserImport(data: any[]) {
     try {
         // Fetch existing master data to map names to IDs
-        const [departments, locations, designations] = await Promise.all([
-            prisma.department.findMany(),
+        const [teams, locations, designations] = await Promise.all([
+            prisma.team.findMany(),
             prisma.location.findMany(),
             prisma.designation.findMany(),
         ]);
@@ -54,7 +54,8 @@ export async function processUserImport(data: any[]) {
                 const clean = (val: any) => (val && val.toString().trim() !== '' ? val.toString().trim() : undefined);
 
                 // Map master data names to IDs if provided
-                const dept = departments.find(d => d.name.toLowerCase() === item.department?.toLowerCase());
+                const teamRecord = teams.find(d => d.name.toLowerCase() === item.team?.toLowerCase() || d.name.toLowerCase() === item.department?.toLowerCase());
+                const designationRecord = designations.find(d => d.name.toLowerCase() === item.designation?.toLowerCase());
                 const loc = locations.find(l => l.name.toLowerCase() === item.location?.toLowerCase());
                 const hLoc = locations.find(l => l.name.toLowerCase() === item.home_location?.toLowerCase());
 
@@ -68,7 +69,8 @@ export async function processUserImport(data: any[]) {
                         role: (item.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'BASIC'),
                         password_hash: null as any,
 
-                        department_id: dept?.id || undefined,
+                        team_id: teamRecord?.id || undefined,
+                        designation_id: designationRecord?.id || undefined,
                         assigned_location_id: loc?.id || undefined,
                         home_location_id: hLoc?.id || undefined,
                     }

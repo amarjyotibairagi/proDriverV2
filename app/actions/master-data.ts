@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 // --- FETCH ALL ---
 export async function getMasterData() {
     try {
-        const departments = await prisma.department.findMany({
+        const teams = await prisma.team.findMany({
             orderBy: { name: 'asc' },
             include: { _count: { select: { users: true } } }
         })
@@ -26,45 +26,42 @@ export async function getMasterData() {
             }
         })
 
-        return { departments, designations, locations }
+        return { teams, designations, locations }
     } catch (error) {
         console.error("Get Master Data Error:", error)
-        return { departments: [], designations: [], locations: [] }
+        return { teams: [], designations: [], locations: [] }
     }
 }
 
-// --- DEPARTMENTS ---
+// --- TEAMS ---
 
-export async function manageDepartment(data: { id?: string, name: string }) {
+export async function manageTeam(data: { id?: string, name: string }) {
     try {
-        // Upsert logic manually since we are handling id vs name uniqueness
         if (data.id) {
-            await prisma.department.update({
+            await prisma.team.update({
                 where: { id: data.id },
                 data: { name: data.name }
             })
         } else {
-            // Check duplicate name
-            const existing = await prisma.department.findUnique({ where: { name: data.name } })
-            if (existing) return { success: false, error: "Department name already exists" }
+            const existing = await prisma.team.findUnique({ where: { name: data.name } })
+            if (existing) return { success: false, error: "Team name already exists" }
 
-            await prisma.department.create({ data: { name: data.name } })
+            await prisma.team.create({ data: { name: data.name } })
         }
         revalidatePath('/admin/master-data')
         return { success: true }
     } catch (error) {
-        return { success: false, error: "Failed to save department" }
+        return { success: false, error: "Failed to save team" }
     }
 }
 
-export async function deleteDepartment(id: string) {
+export async function deleteTeam(id: string) {
     try {
-        await prisma.department.delete({ where: { id } })
+        await prisma.team.delete({ where: { id } })
         revalidatePath('/admin/master-data')
         return { success: true }
     } catch (error) {
-        // Prisma will throw if foreign key constraint fails (users exist)
-        return { success: false, error: "Cannot delete: Users are assigned to this department" }
+        return { success: false, error: "Cannot delete: Users are assigned to this team" }
     }
 }
 

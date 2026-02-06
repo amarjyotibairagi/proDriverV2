@@ -21,7 +21,8 @@ const DATABASE_FIELDS = [
     { key: 'mobile_number', label: 'Mobile Number', required: false },
     { key: 'company', label: 'Company', required: false },
     { key: 'role', label: 'Role (BASIC/ADMIN)', required: false },
-    { key: 'department', label: 'Department Name', required: false },
+    { key: 'team', label: 'Team Name', required: false },
+    { key: 'designation', label: 'Designation', required: false },
     { key: 'location', label: 'Assigned Location', required: false },
     { key: 'home_location', label: 'Home Depot', required: false },
 ]

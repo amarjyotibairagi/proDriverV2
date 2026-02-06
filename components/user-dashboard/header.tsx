@@ -42,7 +42,7 @@ export function Header({
   return (
     <>
       <header
-        className="w-full bg-black/40 backdrop-blur-md border-b border-[#D4AF37]/20"
+        className="w-full bg-black/40 backdrop-blur-md border-b border-[#D4AF37]/20 relative z-[100]"
         dir={isRtl ? "rtl" : "ltr"}
       >
         <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
@@ -61,12 +61,11 @@ export function Header({
               width={140}
               height={50}
               className="h-8 sm:h-10 w-auto object-contain"
+              priority
             />
 
             {/* Notifications */}
-            <div className="relative z-50">
-              <NotificationsDropdown userId={user?.dbId || user?.id} role="BASIC" />
-            </div>
+            <NotificationsDropdown userId={user?.dbId || user?.id} role="BASIC" />
 
             {/* Language Selector Section */}
             <div className="relative">

@@ -6,21 +6,21 @@ import { motion, AnimatePresence } from "framer-motion"
 import { MasterDataTable } from "./master-data-table"
 import { ManageItemPopup } from "./manage-item-popup"
 import {
-    manageDepartment, deleteDepartment,
+    manageTeam, deleteTeam,
     manageDesignation, deleteDesignation,
     manageLocation, deleteLocation
 } from "@/app/actions/master-data"
 
 interface MasterDataManagerProps {
-    departments: any[]
+    teams: any[]
     designations: any[]
     locations: any[]
 }
 
-type TabType = 'DEPARTMENTS' | 'DEPOTS' | 'ASSIGNED_AREAS'
+type TabType = 'TEAMS' | 'DESIGNATIONS' | 'DEPOTS' | 'ASSIGNED_AREAS'
 
-export function MasterDataManager({ departments, designations, locations }: MasterDataManagerProps) {
-    const [activeTab, setActiveTab] = useState<TabType>('DEPARTMENTS')
+export function MasterDataManager({ teams, designations, locations }: MasterDataManagerProps) {
+    const [activeTab, setActiveTab] = useState<TabType>('TEAMS')
     const [isPopupOpen, setIsPopupOpen] = useState(false)
     const [editingItem, setEditingItem] = useState<any | null>(null)
 
@@ -36,15 +36,25 @@ export function MasterDataManager({ departments, designations, locations }: Mast
 
     const getActiveConfig = () => {
         switch (activeTab) {
-            case 'DEPARTMENTS':
+            case 'TEAMS':
                 return {
-                    data: departments,
-                    type: 'DEPARTMENT' as const,
+                    data: teams,
+                    type: 'TEAM' as const,
                     fixedLocationType: undefined,
-                    actions: { save: manageDepartment, delete: deleteDepartment },
-                    title: "Structural Designations",
+                    actions: { save: manageTeam, delete: deleteTeam },
+                    title: "Operational Teams",
                     desc: "Manage high-level organizational units and driver team definitions.",
                     accent: "teal"
+                }
+            case 'DESIGNATIONS':
+                return {
+                    data: designations,
+                    type: 'DESIGNATION' as const,
+                    fixedLocationType: undefined,
+                    actions: { save: manageDesignation, delete: deleteDesignation },
+                    title: "Staff Designations",
+                    desc: "Define official roles and professional titles for the workforce.",
+                    accent: "emerald"
                 }
             case 'DEPOTS':
                 return {
@@ -110,12 +120,20 @@ export function MasterDataManager({ departments, designations, locations }: Mast
             <div className="flex p-1.5 bg-slate-900/50 border border-white/5 rounded-[2rem] w-fit relative overflow-hidden shadow-inner">
                 <AnimatePresence mode="popLayout">
                     <TabButton
-                        key="DEPARTMENTS"
-                        active={activeTab === 'DEPARTMENTS'}
-                        onClick={() => setActiveTab('DEPARTMENTS')}
-                        icon={Briefcase}
-                        label="Position / Team"
+                        key="TEAMS"
+                        active={activeTab === 'TEAMS'}
+                        onClick={() => setActiveTab('TEAMS')}
+                        icon={Users}
+                        label="Teams"
                         activeColor="teal"
+                    />
+                    <TabButton
+                        key="DESIGNATIONS"
+                        active={activeTab === 'DESIGNATIONS'}
+                        onClick={() => setActiveTab('DESIGNATIONS')}
+                        icon={Briefcase}
+                        label="Designations"
+                        activeColor="emerald"
                     />
                     <TabButton
                         key="DEPOTS"

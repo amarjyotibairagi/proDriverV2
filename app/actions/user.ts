@@ -13,7 +13,7 @@ export async function getUser(userId: string) {
       include: {
         home_location: true,
         assigned_location: true,
-        department: true,
+        team: true,
       }
     })
 
@@ -29,9 +29,9 @@ export async function getUser(userId: string) {
         // LOGIC: If assigned location exists (Site), use it. Else use Home location (Depot).
         location: user.assigned_location?.name || user.home_location?.name || "Unassigned",
 
-        // LOGIC: Admins show Department, Drivers show Assigned Location
+        // LOGIC: Admins show Team, Drivers show Assigned Location
         assignedArea: user.role === 'ADMIN'
-          ? user.department?.name || "General"
+          ? user.team?.name || "General"
           : user.assigned_location?.name || "Floating Driver"
       }
     }
@@ -76,7 +76,7 @@ export async function changePassword(userId: string, oldPass: string, newPass: s
     if (!user) return { success: false, error: "User not found" }
 
     // B. Verify Old Password
-    const isMatch = await bcrypt.compare(oldPass, user.password_hash)
+    const isMatch = await bcrypt.compare(oldPass, user.password_hash || "")
     if (!isMatch) {
       return { success: false, error: "Incorrect old password" }
     }
@@ -108,7 +108,7 @@ export async function getUserDetailsForSignup(employeeId: string) {
         email: true,
         mobile_number: true,
         company: true,
-        department_id: true,
+        team_id: true,
         designation_id: true,
         home_location_id: true, // For 'Depot' dropdown
         assigned_location_id: true, // For 'Assigned Area' dropdown

@@ -8,13 +8,13 @@ import { getSession } from "./auth"
 // 1. Fetch Options for Dropdowns
 export async function getUserFormOptions() {
     try {
-        const departments = await prisma.department.findMany({ select: { id: true, name: true } })
+        const teams = await prisma.team.findMany({ select: { id: true, name: true } })
         const locations = await prisma.location.findMany({ select: { id: true, name: true } })
         const designations = await prisma.designation.findMany({ select: { id: true, name: true } })
 
-        return { departments, locations, designations }
+        return { teams, locations, designations }
     } catch (error) {
-        return { departments: [], locations: [], designations: [] }
+        return { teams: [], locations: [], designations: [] }
     }
 }
 
@@ -45,7 +45,8 @@ export async function createUser(formData: any) {
                 password_hash: hashedPassword,
 
                 // Relations (Connect if ID is provided)
-                department: formData.departmentId ? { connect: { id: formData.departmentId } } : undefined,
+                team: formData.teamId ? { connect: { id: formData.teamId } } : undefined,
+                designation: formData.designationId ? { connect: { id: formData.designationId } } : undefined,
                 assigned_location: formData.locationId ? { connect: { id: formData.locationId } } : undefined,
                 home_location: formData.homeLocationId ? { connect: { id: formData.homeLocationId } } : undefined,
             }

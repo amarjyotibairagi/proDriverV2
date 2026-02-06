@@ -18,7 +18,7 @@ export async function getUsers(filter: 'all' | 'active' | 'pending' = 'all') {
             where: whereClause,
             orderBy: { createdAt: 'desc' }, // Newest users at the top
             include: {
-                department: true,
+                team: true,
                 designation: true,
                 home_location: true,
                 assigned_location: true,

@@ -19,7 +19,7 @@ export default function ModulesPage() {
             <Sidebar />
 
             <main className="lg:ml-64 min-h-screen relative">
-                <div className="p-4 sm:p-8 lg:p-12 pt-20 lg:pt-10 max-w-[1600px] mx-auto relative z-10">
+                <div className="p-4 sm:p-8 lg:p-12 pt-20 lg:pt-10 max-w-[1600px] mx-auto relative">
                     <Header />
 
                     <SectionHeader

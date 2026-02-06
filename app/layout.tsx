@@ -18,6 +18,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: 'ProDriver - Safety Command Center',
     description: 'ProDriver Dashboard',
+    icons: {
+        icon: '/icon.svg',
+        apple: '/apple-icon.png',
+    }
+}
+
+export const viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({

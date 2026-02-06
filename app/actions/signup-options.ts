@@ -9,6 +9,10 @@ export async function getSignupOptions() {
             orderBy: { name: 'asc' }
         })
 
+        const teams = await prisma.team.findMany({
+            orderBy: { name: 'asc' }
+        })
+
         const depots = await prisma.location.findMany({
             where: { type: LocationType.HOME },
             orderBy: { name: 'asc' }
@@ -22,11 +26,12 @@ export async function getSignupOptions() {
         return {
             success: true,
             designations,
+            teams,
             depots,
             assignedLocations
         }
     } catch (error) {
         console.error("Error fetching signup options:", error)
-        return { success: false, designations: [], depots: [], assignedLocations: [] }
+        return { success: false, designations: [], teams: [], depots: [], assignedLocations: [] }
     }
 }

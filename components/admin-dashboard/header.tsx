@@ -102,6 +102,7 @@ export function Header({ showFilter = false }: { showFilter?: boolean }) {
               src="/mowasalat-logo.png"
               alt="Company Logo"
               className="h-6 w-auto object-contain brightness-0 invert opacity-70 group-hover:opacity-100 transition-opacity"
+              loading="eager"
             />
           </div>
         </motion.div>

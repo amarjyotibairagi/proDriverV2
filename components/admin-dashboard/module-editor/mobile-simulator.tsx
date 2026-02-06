@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Play, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Image as ImageIcon, Loader2, Settings, Volume2, Music, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANGUAGES } from "@/lib/languages";
 import { getAudioConfig } from "@/app/actions/module-editor";
@@ -31,11 +31,47 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
     const [audioEnded, setAudioEnded] = useState(false);
     const [audioFailed, setAudioFailed] = useState(false);
     const [animationsDone, setAnimationsDone] = useState(false);
+    const [audioDuration, setAudioDuration] = useState(0);
     const [quizSelections, setQuizSelections] = useState<Record<string, string>>({});
     const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
+    // Audio Settings
+    const [showSettings, setShowSettings] = useState(false);
+    const [voiceVolume, setVoiceVolume] = useState(1.0);
+    const [bgVolume, setBgVolume] = useState(0.15);
+
     // Audio Ref
     const audioRef = useRef<HTMLAudioElement>(null);
+    const bgAudioRef = useRef<HTMLAudioElement>(null);
+
+    // Volume Management
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = voiceVolume;
+        }
+    }, [voiceVolume]);
+
+    useEffect(() => {
+        if (bgAudioRef.current) {
+            bgAudioRef.current.volume = bgVolume;
+        }
+    }, [bgVolume]);
+
+    // Background Audio Logic
+    useEffect(() => {
+        if (hasStarted && bgAudioRef.current) {
+            bgAudioRef.current.volume = bgVolume;
+            const playPromise = bgAudioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Background Audio Auto-play prevented:", error);
+                });
+            }
+        } else if (!hasStarted && bgAudioRef.current) {
+            bgAudioRef.current.pause();
+            bgAudioRef.current.currentTime = 0;
+        }
+    }, [hasStarted]);
 
     useEffect(() => {
         getAudioConfig().then(res => {
@@ -194,22 +230,52 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
 
     const elementAnimations = useMemo(() => {
         if (!sourceSlide?.elements) return [];
-        return sourceSlide.elements.map((_: any, idx: number) => {
-            return getRandomEntryAnimation(idx * 0.5, 0.5);
+
+        const nonImageElements = sourceSlide.elements.filter((el: any) => el.type !== 'image');
+        const elementCount = nonImageElements.length;
+
+        // If we have audio duration, distribute non-image elements across it. 
+        // We use (elementCount) to divide the duration, ensuring the last chunk has time to be read.
+        const interval = audioDuration > 0
+            ? (audioDuration / elementCount)
+            : 0.5;
+
+        let lastNonImageDelay = 0;
+        let speechIdx = 0;
+
+        return sourceSlide.elements.map((el: any) => {
+            if (el.type !== 'image') {
+                lastNonImageDelay = speechIdx * interval;
+                speechIdx++;
+                return getRandomEntryAnimation(lastNonImageDelay, 0.5);
+            } else {
+                // Images appear with the PREVIOUS text/quiz element (or 0 if first)
+                return getRandomEntryAnimation(lastNonImageDelay, 0.5);
+            }
         });
-    }, [sourceSlide?.elements]);
+    }, [sourceSlide?.elements, audioDuration]);
 
     useEffect(() => {
         if (hasStarted && sourceSlide?.elements) {
-            const totalDuration = (sourceSlide.elements.length * 0.5) + 0.5;
+            const nonImageElements = sourceSlide.elements.filter((el: any) => el.type !== 'image');
+            const elementCount = nonImageElements.length;
+
+            const interval = audioDuration > 0
+                ? (audioDuration / elementCount)
+                : 0.5;
+
+            // Max delay is for the last element: (N-1) * interval
+            const maxDelayAt = (elementCount > 0 ? (elementCount - 1) : 0) * interval;
+            const totalWaitTime = maxDelayAt + 0.5;
+
             const timer = setTimeout(() => {
                 setAnimationsDone(true);
-            }, totalDuration * 1000);
+            }, totalWaitTime * 1000);
             return () => clearTimeout(timer);
         } else {
             setAnimationsDone(true);
         }
-    }, [hasStarted, sourceSlide]);
+    }, [hasStarted, sourceSlide, audioDuration]);
 
     useEffect(() => {
         if (hasStarted && isPlaying && audioRef.current && currentAudioUrl) {
@@ -477,11 +543,25 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
                             ref={audioRef}
                             src={currentAudioUrl || undefined}
                             className="hidden"
+                            onLoadedMetadata={(e) => {
+                                const duration = e.currentTarget.duration;
+                                console.log(`[MobileSimulator] Audio Duration: ${duration}s`);
+                                setAudioDuration(duration);
+                            }}
                             onEnded={() => setAudioEnded(true)}
                             onError={() => {
                                 console.warn("Audio failed to load:", currentAudioUrl);
                                 setAudioFailed(true);
+                                setAudioDuration(0); // Reset on error
                             }}
+                        />
+
+                        {/* Background Audio */}
+                        <audio
+                            ref={bgAudioRef}
+                            src="/background.mp3"
+                            loop
+                            className="hidden"
                         />
                     </div>
 
@@ -535,6 +615,62 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className={`w-14 h-14 rounded-full border transition-all flex items-center justify-center shadow-lg ${showSettings ? 'bg-teal-500 border-teal-500 text-slate-900 shadow-teal-500/40' : 'bg-slate-800 border-white/20 text-slate-400 hover:text-white shadow-black/40'}`}
+                            title="Audio Settings"
+                        >
+                            <Settings className={`w-6 h-6 ${showSettings ? 'animate-spin-slow' : ''}`} />
+                        </button>
+
+                        {/* Volume Settings Popup */}
+                        {showSettings && (
+                            <div className="absolute top-0 left-full ml-4 z-[100] bg-slate-900 border border-white/10 p-4 rounded-xl shadow-2xl w-64 space-y-4 animate-in fade-in slide-in-from-left-2">
+                                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                    <h3 className="text-xs font-bold text-white uppercase tracking-widest">Audio Mixer</h3>
+                                    <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-white">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                {/* Voice Volume */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs font-medium text-slate-400">
+                                        <span className="flex items-center gap-1"><Volume2 className="w-3 h-3" /> Voice</span>
+                                        <span className="text-teal-400">{Math.round(voiceVolume * 100)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={voiceVolume}
+                                        onChange={(e) => setVoiceVolume(parseFloat(e.target.value))}
+                                        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                                    />
+                                </div>
+
+                                {/* Background Volume */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs font-medium text-slate-400">
+                                        <span className="flex items-center gap-1"><Music className="w-3 h-3" /> Ambience</span>
+                                        <span className="text-teal-400">{Math.round(bgVolume * 100)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={bgVolume}
+                                        onChange={(e) => setBgVolume(parseFloat(e.target.value))}
+                                        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <button
