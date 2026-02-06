@@ -94,21 +94,28 @@ export function SlideEditor({ slide, onUpdate, moduleType = 'TRAINING', moduleId
     const activeElement = slide.elements?.find(el => el.id === selectedElementId);
 
     // --- Actions ---
+    const moveElement = (index: number, direction: 'up' | 'down') => {
+        if (!slide.elements) return;
+        const newElements = [...slide.elements];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (newIndex >= 0 && newIndex < newElements.length) {
+            const [moved] = newElements.splice(index, 1);
+            newElements.splice(newIndex, 0, moved);
+            onUpdate({ ...slide, elements: newElements });
+
+            // Stay focused on the moved element
+            if (selectedElementId === moved.id) {
+                // Already selected
+            }
+        }
+    };
+
     const handleLayerChange = (dir: 'up' | 'down') => {
         if (!activeElement || !slide.elements) return;
-
-        const currentElements = [...slide.elements];
-        const currentIndex = currentElements.findIndex(el => el.id === activeElement.id);
+        const currentIndex = slide.elements.findIndex(el => el.id === activeElement.id);
         if (currentIndex === -1) return;
-
-        const newIndex = dir === 'up' ? currentIndex - 1 : currentIndex + 1;
-
-        if (newIndex >= 0 && newIndex < currentElements.length) {
-            const [movedElement] = currentElements.splice(currentIndex, 1);
-            currentElements.splice(newIndex, 0, movedElement);
-
-            onUpdate({ ...slide, elements: currentElements });
-        }
+        moveElement(currentIndex, dir);
     };
 
     return (
@@ -160,9 +167,27 @@ export function SlideEditor({ slide, onUpdate, moduleType = 'TRAINING', moduleId
                                     )}
                                     <span className="truncate max-w-[150px]">{el.content || (el.type === 'image' ? 'Image' : 'New Quiz')}</span>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="text-slate-600 hover:text-red-400 p-1">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); moveElement(i, 'up'); }}
+                                        disabled={i === 0}
+                                        className={`p-1 rounded transition-colors ${i === 0 ? 'text-slate-800' : 'text-slate-600 hover:text-teal-400 hover:bg-white/5'}`}
+                                        title="Move Up"
+                                    >
+                                        <ArrowUp className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); moveElement(i, 'down'); }}
+                                        disabled={i === (slide.elements?.length || 0) - 1}
+                                        className={`p-1 rounded transition-colors ${i === (slide.elements?.length || 0) - 1 ? 'text-slate-800' : 'text-slate-600 hover:text-teal-400 hover:bg-white/5'}`}
+                                        title="Move Down"
+                                    >
+                                        <ArrowDown className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="text-slate-600 hover:text-red-400 p-1 ml-1">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
