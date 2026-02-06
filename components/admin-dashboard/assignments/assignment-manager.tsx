@@ -17,7 +17,7 @@ export function AssignmentManager() {
     const [assignments, setAssignments] = useState<any[]>([])
     const [users, setUsers] = useState<any[]>([])
     const [modules, setModules] = useState<any[]>([])
-    const [masterData, setMasterData] = useState<any>({ departments: [], locations: [] })
+    const [masterData, setMasterData] = useState<any>({ teams: [], locations: [] })
     const [isLoading, setIsLoading] = useState(true)
 
     // Popup States
@@ -209,7 +209,7 @@ export function AssignmentManager() {
                 <AdvancedFilters
                     search={filters.search}
                     onSearchChange={(v) => handleUpdateFilter('search', v)}
-                    departments={masterData.departments}
+                    departments={masterData.teams || []}
                     locations={masterData.locations}
                     selectedDepts={filters.selectedDepts}
                     onDeptsChange={(v) => handleUpdateFilter('selectedDepts', v)}
