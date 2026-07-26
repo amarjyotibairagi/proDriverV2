@@ -57,6 +57,7 @@ interface UserData {
 interface FilterState {
     roles: string[]
     teams: string[]
+    designations: string[] // NEW: Added designation filter
     homeLocations: string[]
     assignedLocations: string[]
 }
@@ -64,6 +65,7 @@ interface FilterState {
 const INITIAL_FILTERS: FilterState = {
     roles: [],
     teams: [],
+    designations: [],
     homeLocations: [],
     assignedLocations: []
 }
@@ -234,7 +236,15 @@ export function UsersTable({
                 return false
             }
 
-            // 3.5 Designation Filter (Optional if needed, but adding Team for now)
+            // 3.5 Designation Filter
+            if (activeFilters.designations.length > 0 && !activeFilters.designations.includes(user.designation?.id || "Unassigned")) {
+                return false
+            }
+
+            // 3.5 Designation Filter
+            if (activeFilters.designations.length > 0 && !activeFilters.designations.includes(user.designation?.id || "Unassigned")) {
+                return false
+            }
 
             // 4. Home Location Filter (Depot)
             if (activeFilters.homeLocations.length > 0 && !activeFilters.homeLocations.includes(user.home_location?.name || "Unassigned")) {
@@ -332,6 +342,18 @@ export function UsersTable({
                                                     label={team.name}
                                                     checked={tempFilters.teams.includes(team.id)}
                                                     onChange={() => handleFilterChange('teams', team.id)}
+                                                />
+                                            ))}
+                                        </FilterSection>
+
+                                        {/* Designation */}
+                                        <FilterSection title="Designation">
+                                            {options?.designations?.map((desig: any) => (
+                                                <FilterCheckbox
+                                                    key={desig.id}
+                                                    label={desig.name}
+                                                    checked={tempFilters.designations.includes(desig.id)}
+                                                    onChange={() => handleFilterChange('designations', desig.id)}
                                                 />
                                             ))}
                                         </FilterSection>

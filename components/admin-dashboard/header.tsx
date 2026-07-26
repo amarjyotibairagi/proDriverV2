@@ -95,15 +95,12 @@ export function Header({ showFilter = false }: { showFilter?: boolean }) {
           {/* Notification Bell */}
           <NotificationsDropdown role="ADMIN" />
 
-          {/* Logo Container */}
-          <div className="h-12 w-auto bg-black/60 rounded-2xl px-6 border border-white/10 backdrop-blur-xl flex items-center justify-center shadow-2xl group relative overflow-hidden">
+          {/* Brand Container */}
+          <div className="h-12 w-auto bg-black/60 rounded-2xl px-5 border border-white/10 backdrop-blur-xl flex items-center justify-center shadow-2xl group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/5 to-teal-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-            <img
-              src="/mowasalat-logo.png"
-              alt="Company Logo"
-              className="h-6 w-auto object-contain brightness-0 invert opacity-70 group-hover:opacity-100 transition-opacity"
-              loading="eager"
-            />
+            <span className="text-white font-black text-xs tracking-[0.25em] italic relative z-10">
+              PRO<span className="text-teal-400">DRIVER</span>
+            </span>
           </div>
         </motion.div>
       </div>

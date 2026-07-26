@@ -17,7 +17,7 @@ export function AssignmentManager() {
     const [assignments, setAssignments] = useState<any[]>([])
     const [users, setUsers] = useState<any[]>([])
     const [modules, setModules] = useState<any[]>([])
-    const [masterData, setMasterData] = useState<any>({ teams: [], locations: [] })
+    const [masterData, setMasterData] = useState<any>({ teams: [], designations: [], locations: [] })
     const [isLoading, setIsLoading] = useState(true)
 
     // Popup States
@@ -35,6 +35,7 @@ export function AssignmentManager() {
         statuses: [] as string[],
         moduleIds: [] as string[],
         selectedDepts: [] as string[],
+        selectedDesignations: [] as string[], // NEW
         selectedDepots: [] as string[],
         selectedAssignedLocs: [] as string[]
     })
@@ -45,7 +46,8 @@ export function AssignmentManager() {
             search: filters.search,
             statuses: filters.statuses,
             moduleIds: filters.moduleIds,
-            departmentIds: filters.selectedDepts,
+            teamIds: filters.selectedDepts, // Mapped to teamIds
+            designationIds: filters.selectedDesignations, // NEW
             depotIds: filters.selectedDepots,
             assignedLocationIds: filters.selectedAssignedLocs
         })
@@ -63,7 +65,8 @@ export function AssignmentManager() {
         setIsLoading(true)
         const result = await getUsersForAssignment({
             search: filters.search,
-            departmentIds: filters.selectedDepts,
+            teamIds: filters.selectedDepts, // Mapped
+            designationIds: filters.selectedDesignations, // NEW
             depotIds: filters.selectedDepots,
             assignedLocationIds: filters.selectedAssignedLocs
         })
@@ -209,10 +212,13 @@ export function AssignmentManager() {
                 <AdvancedFilters
                     search={filters.search}
                     onSearchChange={(v) => handleUpdateFilter('search', v)}
-                    departments={masterData.teams || []}
+                    teams={masterData.teams || []}
+                    designations={masterData.designations || []} // NEW
                     locations={masterData.locations}
-                    selectedDepts={filters.selectedDepts}
-                    onDeptsChange={(v) => handleUpdateFilter('selectedDepts', v)}
+                    selectedTeams={filters.selectedDepts}
+                    onTeamsChange={(v) => handleUpdateFilter('selectedDepts', v)}
+                    selectedDesignations={filters.selectedDesignations} // NEW
+                    onDesignationsChange={(v) => handleUpdateFilter('selectedDesignations', v)} // NEW
                     selectedDepots={filters.selectedDepots}
                     onDepotsChange={(v) => handleUpdateFilter('selectedDepots', v)}
                     selectedAssignedLocs={filters.selectedAssignedLocs}

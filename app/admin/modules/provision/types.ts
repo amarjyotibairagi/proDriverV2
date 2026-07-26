@@ -1,4 +1,4 @@
-export type ElementType = 'text' | 'image' | 'quiz';
+export type ElementType = 'text' | 'image' | 'quiz' | 'video' | 'image-slider' | 'sequence-sorter' | 'split-second';
 
 export interface ElementStyle {
     top?: number; // %
@@ -31,17 +31,57 @@ export interface QuizOption {
     isCorrect: boolean;
 }
 
+export interface ImageSliderSlide {
+    id: string;
+    imageUrl: string;
+    description: string;
+}
+
+export interface SequenceStep {
+    id: string;
+    text: string;
+    correctOrder: number;
+    audioUrl?: string;
+}
+
+export interface SplitOption {
+    id: string;
+    text: string;
+    isCorrect: boolean;
+    feedbackText: string;
+    feedbackAudioUrl?: string;
+}
+
 export interface SlideElement {
     id: string;
     type: ElementType;
-    content: string; // Text content or Image URL
+    content: string; // Text content or Image/Video URL
     style: ElementStyle;
     animation?: ElementAnimation;
+
+    // Per-block Audio
+    audioUrl?: string;
 
     // Quiz Specific
     quizOptions?: QuizOption[];
     correctAnswerId?: string; // For single choice (Deprecated, prefer quizOptions.isCorrect)
     marks?: number; // Marks for this question
+
+    // --- NEW INTERACTIVE COMPONENT DATA ---
+
+    // Image Slider
+    sliderSlides?: ImageSliderSlide[];
+
+    // Sequence Sorter
+    sequenceSteps?: SequenceStep[];
+
+    // Split Second
+    splitOptions?: {
+        optionA: SplitOption;
+        optionB: SplitOption;
+        correctOptionId: 'A' | 'B';
+        contextMediaUrl?: string;
+    };
 }
 
 export interface SlideData {

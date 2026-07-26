@@ -33,6 +33,7 @@ interface ReportChartsProps {
     modulePerformance: { name: string, averageScore: number, attempts: number }[]
     depotStats: { name: string, completed: number, total: number, percentage: number }[]
     teamStats: { name: string, completed: number, total: number, percentage: number }[]
+    designationStats: { name: string, completed: number, total: number, percentage: number }[]
     onChartClick?: (category: string, value: string, title: string, moduleId?: string) => void
 }
 
@@ -150,7 +151,7 @@ const renderCustomizedLabel = (props: any) => {
     );
 };
 
-export function ReportCharts({ trainingStats, testStats, modulePerformance, depotStats, teamStats, onChartClick }: ReportChartsProps) {
+export function ReportCharts({ trainingStats, testStats, modulePerformance, depotStats, teamStats, designationStats, onChartClick }: ReportChartsProps) {
 
     const trainingData = trainingStats.map(s => ({
         name: s.status.replace('_', ' '),
@@ -310,10 +311,35 @@ export function ReportCharts({ trainingStats, testStats, modulePerformance, depo
                 {/* Combined Bar Charts */}
                 {[
                     { title: 'Depot-wise Completion', data: depotStats, key: 'percentage' as const, icon: BarChart3, color: 'indigo' },
-                    { title: 'Designation Performance', data: teamStats, key: 'percentage' as const, icon: BarChart3, color: 'emerald' },
+                    { title: 'Team Performance', data: teamStats, key: 'percentage' as const, icon: BarChart3, color: 'emerald' },
+                    { title: 'Designation Performance', data: designationStats, key: 'percentage' as const, icon: BarChart3, color: 'sky' },
                     { title: 'Module Efficiency', data: modulePerformance, key: 'averageScore' as const, icon: BarChart3, color: 'pink', unit: '%' }
                 ].map((chart, idx) => {
-                    const filteredData = chart.data.filter(item => ((item as any)[chart.key] || 0) > 0);
+                    const filteredData = chart.data;
+
+                    if (!filteredData || filteredData.length === 0) {
+                        return (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className={`${containerStyle(chart.color)} lg:col-span-2 flex flex-col items-center justify-center min-h-[450px]`}
+                            >
+                                <div className="flex items-center gap-4 mb-4 absolute top-8 left-8">
+                                    <div className={`p-3 rounded-2xl bg-${chart.color}-500/10 border border-${chart.color}-500/20`}>
+                                        <chart.icon className={`w-5 h-5 text-${chart.color}-400`} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-[0.2em]">{chart.title}</h3>
+                                </div>
+                                <div className="p-4 rounded-full bg-slate-800/50 mb-4">
+                                    <Activity className="w-6 h-6 text-slate-600 opacity-50" />
+                                </div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No Data Available</p>
+                            </motion.div>
+                        )
+                    }
+
                     return (
                         <motion.div
                             key={idx}
@@ -344,9 +370,27 @@ export function ReportCharts({ trainingStats, testStats, modulePerformance, depo
                                             fontWeight="700"
                                             tickLine={false}
                                             axisLine={false}
-                                            tick={false}
-                                            dy={10}
+                                            tick={(props: any) => {
+                                                const { x, y, payload } = props;
+                                                return (
+                                                    <g transform={`translate(${x}, ${y + 10})`}>
+                                                        <text
+                                                            x={0}
+                                                            y={0}
+                                                            fill="rgba(255,255,255,0.5)"
+                                                            textAnchor="start"
+                                                            fontSize={9}
+                                                            fontWeight="800"
+                                                            transform="rotate(-90)"
+                                                            className="uppercase tracking-widest pointer-events-none"
+                                                        >
+                                                            {payload.value}
+                                                        </text>
+                                                    </g>
+                                                );
+                                            }}
                                             interval={0}
+                                            height={80}
                                         />
                                         <YAxis
                                             stroke="#475569"
@@ -371,7 +415,6 @@ export function ReportCharts({ trainingStats, testStats, modulePerformance, depo
                                             {chart.data.map((entry: any, index: number) => (
                                                 <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} stroke="none" />
                                             ))}
-                                            <LabelList dataKey="name" content={<CustomBarCategoryLabel />} />
                                             <LabelList dataKey={chart.key} content={<CustomBarLabel />} />
                                         </Bar>
                                     </BarChart>

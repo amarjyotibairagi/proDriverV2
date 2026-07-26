@@ -228,6 +228,136 @@ export async function generateAudioAssets(
     });
 }
 
+// --- ACTION B2: Generate All Block Audio Assets ---
+export async function generateAllBlockAudio(
+    moduleId: number,
+    mode: 'training' | 'test'
+): Promise<{ success: boolean; generated: number; errors: string[] }> {
+    if (!process.env.AZURE_SPEECH_KEY || !process.env.AZURE_SPEECH_REGION) {
+        return { success: false, generated: 0, errors: ["Azure Speech credentials missing"] };
+    }
+
+    const errors: string[] = [];
+    let generated = 0;
+
+    try {
+        // 1. Fetch module content
+        const module = await prisma.module.findUnique({ where: { id: moduleId } });
+        if (!module || !module.content) {
+            return { success: false, generated: 0, errors: ["Module not found or has no content"] };
+        }
+
+        const content = module.content as any;
+        const modeFolder = mode === 'test' ? 'test' : 'training';
+        const slides = mode === 'test'
+            ? (content.assessment?.slides || [])
+            : (content.training?.slides || []);
+
+        const translations = content.translations || {};
+
+        // 2. Collect all languages (English + translated)
+        const allLanguages = ['en', ...Object.keys(translations)];
+        const uniqueLanguages = [...new Set(allLanguages)];
+
+        console.log(`[AudioGen] Module ${moduleId}, Mode: ${mode}, Languages: ${uniqueLanguages.join(', ')}`);
+
+        // 3. Iterate through all slides, elements, and languages
+        for (let slideIdx = 0; slideIdx < slides.length; slideIdx++) {
+            const slide = slides[slideIdx];
+            const slideElements = slide.elements || [];
+
+            for (const element of slideElements) {
+                // Only process text and quiz elements
+                if (element.type !== 'text' && element.type !== 'quiz') continue;
+
+                for (const langCode of uniqueLanguages) {
+                    let textContent = '';
+
+                    if (langCode === 'en') {
+                        // Use source content
+                        textContent = element.content || '';
+                    } else {
+                        // Look up translation
+                        const langData = translations[langCode];
+                        if (langData) {
+                            const slideTranslation = langData[slide.id] || langData[String(slideIdx + 1)];
+                            if (slideTranslation?.content) {
+                                // Translation content may be combined - try to extract for this element
+                                // For now, use full slide content (split logic can be refined later)
+                                textContent = slideTranslation.content;
+                            }
+                        }
+                    }
+
+                    if (!textContent || textContent.trim().length === 0) {
+                        console.log(`[AudioGen] Skipping empty: Slide ${slideIdx + 1}, Element ${element.id}, Lang ${langCode}`);
+                        continue;
+                    }
+
+                    // Generate audio
+                    const speechConfig = sdk.SpeechConfig.fromSubscription(
+                        process.env.AZURE_SPEECH_KEY!,
+                        process.env.AZURE_SPEECH_REGION!
+                    );
+
+                    const targetVoice = VOICE_MAP[langCode] || "en-US-AvaNeural";
+                    speechConfig.speechSynthesisVoiceName = targetVoice;
+
+                    const audioResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+                        const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+                        synthesizer.speakTextAsync(
+                            textContent,
+                            async (result) => {
+                                if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+                                    const audioBuffer = Buffer.from(result.audioData);
+                                    const key = `${moduleId}/${modeFolder}/audio/${slideIdx + 1}_${element.id}_${langCode.toUpperCase()}.mp3`;
+
+                                    try {
+                                        await r2Client.send(new PutObjectCommand({
+                                            Bucket: process.env.R2_BUCKET_NAME,
+                                            Key: key,
+                                            Body: audioBuffer,
+                                            ContentType: "audio/mpeg"
+                                        }));
+
+                                        console.log(`[AudioGen] Created: ${key}`);
+                                        synthesizer.close();
+                                        resolve({ success: true });
+                                    } catch (uploadError) {
+                                        synthesizer.close();
+                                        resolve({ success: false, error: `Upload failed: ${key}` });
+                                    }
+                                } else {
+                                    synthesizer.close();
+                                    resolve({ success: false, error: `Synthesis failed: ${result.errorDetails}` });
+                                }
+                            },
+                            (error) => {
+                                synthesizer.close();
+                                resolve({ success: false, error: `Synthesizer error: ${error}` });
+                            }
+                        );
+                    });
+
+                    if (audioResult.success) {
+                        generated++;
+                    } else if (audioResult.error) {
+                        errors.push(audioResult.error);
+                    }
+                }
+            }
+        }
+
+        console.log(`[AudioGen] Completed: ${generated} files generated, ${errors.length} errors`);
+        return { success: true, generated, errors };
+
+    } catch (error) {
+        console.error("[AudioGen] Fatal Error:", error);
+        return { success: false, generated, errors: [...errors, String(error)] };
+    }
+}
+
 // --- ACTION I: Upload Translation JSON ---
 export async function uploadTranslationFile(
     moduleId: number,

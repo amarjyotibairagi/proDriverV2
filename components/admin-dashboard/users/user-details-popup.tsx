@@ -10,7 +10,8 @@ interface UserDetails {
     email: string | null
     mobile_number: string | null
     role: string
-    department?: { id: string; name: string } | null
+    team?: { id: string; name: string } | null
+    designation?: { id: string; name: string } | null
     company?: string | null
     assigned_location?: { id: string; name: string } | null
     home_location?: { id: string; name: string } | null
@@ -79,7 +80,8 @@ export function UserDetailsPopup({ isOpen, onClose, user }: UserDetailsPopupProp
                             <InfoRow icon={Building} label="Company" value={user.company || "N/A"} />
                             <InfoRow icon={Mail} label="Email Address" value={user.email || "N/A"} />
                             <InfoRow icon={Phone} label="Mobile Number" value={user.mobile_number || "N/A"} />
-                            <InfoRow icon={Building} label="Designation / Team" value={user.department?.name || "General"} />
+                            <InfoRow icon={Building} label="Team" value={user.team?.name || "General"} />
+                            <InfoRow icon={Building} label="Designation" value={user.designation?.name || "N/A"} />
                             <InfoRow icon={MapPin} label="Home Depot" value={user.home_location?.name || "N/A"} />
                             <InfoRow icon={MapPin} label="Assigned Site" value={user.assigned_location?.name || "Unassigned"} iconColor="text-emerald-400" />
                         </div>

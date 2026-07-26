@@ -8,8 +8,8 @@ import { SlideEditor } from "@/components/admin-dashboard/module-editor/slide-ma
 import { SlideNavigator } from "@/components/admin-dashboard/module-editor/slide-navigator";
 import { MobileSimulator } from "@/components/admin-dashboard/module-editor/mobile-simulator";
 import { TranslationManager } from "@/components/admin-dashboard/module-editor/translation-manager";
-import { saveModule, getModule, getNextModuleId, importModule, getAvailableModules, getAudioConfig } from "@/app/actions/module-editor";
-import { Save, Loader2, ArrowLeft, Upload, Download, BookOpen, GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
+import { saveModule, getModule, getNextModuleId, importModule, getAvailableModules, getAudioConfig, generateAllBlockAudio } from "@/app/actions/module-editor";
+import { Save, Loader2, ArrowLeft, Upload, Download, BookOpen, GraduationCap, ShieldCheck, Sparkles, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ function EditModuleContent() {
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
     const [isLoading, setIsLoading] = useState(!!moduleId);
     const [nextId, setNextId] = useState<number | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -165,6 +166,35 @@ function EditModuleContent() {
             console.error(e);
             setIsSaving(false);
             toast.error("An unexpected error occurred");
+        }
+    }
+
+    const handleGenerateAudio = async () => {
+        if (!moduleId) {
+            toast.error("Please save the module first");
+            return;
+        }
+
+        setIsGeneratingAudio(true);
+        toast.info("Generating audio assets...", { duration: 5000 });
+
+        try {
+            const mode = activeMode === 'assessment' ? 'test' : 'training';
+            const result = await generateAllBlockAudio(moduleId, mode);
+
+            if (result.success) {
+                toast.success(`Generated ${result.generated} audio files!`);
+                if (result.errors.length > 0) {
+                    console.warn("Audio generation errors:", result.errors);
+                }
+            } else {
+                toast.error(`Audio generation failed: ${result.errors.join(', ')}`);
+            }
+        } catch (error) {
+            console.error("Audio generation error:", error);
+            toast.error("Failed to generate audio");
+        } finally {
+            setIsGeneratingAudio(false);
         }
     };
 

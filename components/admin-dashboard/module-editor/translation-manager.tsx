@@ -264,7 +264,7 @@ export function TranslationManager({ moduleData, slides, activeMode, onUpdate, p
         }
     };
 
-    // 3. Batch Generate
+    // 3. Batch Generate - Per Element Audio
     const handleBatchGenerate = async () => {
         const translations = moduleData.content?.translations || {};
         if (slides.length === 0) {
@@ -285,70 +285,67 @@ export function TranslationManager({ moduleData, slides, activeMode, onUpdate, p
                 for (let i = 0; i < slides.length; i++) {
                     if (abortRef.current) break;
                     const slide = slides[i];
+                    const slideIndex = i + 1;
+                    const modeFolder = activeMode === 'assessment' ? 'test' : 'training';
                     const slideTrans = langData[slide.id];
-                    const baseContent = extractSlideContent(slide);
-                    const finalContent = slideTrans?.content || baseContent;
+                    const elements = slide.elements || [];
 
-                    if (finalContent || slide.title || slideTrans?.title) {
-                        const slideIndex = i + 1; // 1-based index relative to mode
-                        const modeFolder = activeMode === 'assessment' ? 'test' : 'training';
-                        const expectedAudioUrl = `${r2Domain}/${pathPrefix}${moduleData.id}/${modeFolder}/audio/${slideIndex}_${lang.toUpperCase()}.mp3`;
+                    // Parse translated content parts (split by double newline)
+                    const translatedParts = slideTrans?.content?.split('\n\n') || [];
+                    let partIdx = 0;
 
-                        // CHECK: Does the audio file already exist in R2?
-                        let audioExists = slideTrans?.hasAudio || false;
-                        if (!audioExists && r2Domain) {
+                    for (const element of elements) {
+                        if (abortRef.current) break;
+                        // Only process text and quiz elements
+                        if (element.type !== 'text' && element.type !== 'quiz') continue;
+
+                        let textContent = '';
+                        if (lang === 'en') {
+                            textContent = element.content || '';
+                        } else {
+                            // Use corresponding translated part
+                            textContent = translatedParts[partIdx] || element.content || '';
+                        }
+                        partIdx++;
+
+                        if (!textContent || textContent.trim().length === 0) continue;
+
+                        // R2 path: <moduleId>/<mode>/audio/<slideIndex>_<elementId>_<LANG>.mp3
+                        const audioKey = `${slideIndex}_${element.id}_${lang.toUpperCase()}`;
+                        const expectedAudioUrl = `${r2Domain}/${pathPrefix}${moduleData.id}/${modeFolder}/audio/${audioKey}.mp3`;
+
+                        // Check if audio exists
+                        let audioExists = false;
+                        if (r2Domain) {
                             try {
                                 const headRes = await fetch(expectedAudioUrl, { method: 'HEAD' });
                                 audioExists = headRes.ok;
-                                if (audioExists) {
-                                    // Update the hasAudio flag in state
-                                    if (!moduleData.content.translations) moduleData.content.translations = {};
-                                    if (!moduleData.content.translations[lang]) moduleData.content.translations[lang] = {};
-                                    moduleData.content.translations[lang][slide.id] = {
-                                        ...(moduleData.content.translations[lang][slide.id] || {}),
-                                        hasAudio: true
-                                    };
-                                }
                             } catch {
-                                // HEAD request failed, assume audio doesn't exist
+                                // Assume doesn't exist
                             }
                         }
 
-                        // Skip if audio already exists
                         if (audioExists) {
                             skipped++;
-                            setProgress(`Skipping ${lang.toUpperCase()}: Slide ${slideIndex} (already exists)`);
+                            setProgress(`Skipping ${lang.toUpperCase()}: Slide ${slideIndex}, Block ${element.id.slice(-6)} (exists)`);
                             continue;
                         }
 
-                        const title = slideTrans?.title || slide.title || "";
-                        const textToSpeak = finalContent;
-
-                        setProgress(`Generating ${lang.toUpperCase()}: Slide ${slideIndex}...`);
+                        setProgress(`Generating ${lang.toUpperCase()}: Slide ${slideIndex}, Block ${element.id.slice(-6)}...`);
 
                         const res = await generateAudioAssets(
-                            textToSpeak,
+                            textContent,
                             lang,
                             {
                                 moduleId: moduleData.id,
                                 mode: activeMode === 'assessment' ? 'test' : 'training',
-                                slideIndex: slideIndex,
-                                moduleSlug: moduleData.slug // Fallback
+                                slideIndex: `${slideIndex}_${element.id}`, // Include element ID in path
+                                moduleSlug: moduleData.slug
                             }
                         );
 
                         if (res.success) {
                             success++;
-                            // ... (Update state logic same as before)
-                            if (!moduleData.content.translations) moduleData.content.translations = {};
-                            if (!moduleData.content.translations[lang]) moduleData.content.translations[lang] = {};
-                            const currentSlideRecord = moduleData.content.translations[lang][slide.id] || {};
-                            moduleData.content.translations[lang][slide.id] = {
-                                title: currentSlideRecord.title || (lang === 'en' ? slide.title : ""),
-                                content: currentSlideRecord.content || (lang === 'en' ? "" : ""),
-                                ...currentSlideRecord,
-                                hasAudio: true
-                            };
                         } else {
                             failed++;
                         }
@@ -357,7 +354,7 @@ export function TranslationManager({ moduleData, slides, activeMode, onUpdate, p
                 }
             }
             onUpdate({ ...moduleData });
-            toast.success(`Batch Complete! ${success} generated, ${skipped} skipped (already exist).`);
+            toast.success(`Batch Complete! ${success} generated, ${skipped} skipped.`);
         } catch (e) {
             console.error(e);
             toast.error("Error during generation");

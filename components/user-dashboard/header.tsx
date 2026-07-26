@@ -52,17 +52,8 @@ export function Header({
             <span className="text-[#2BB5A8] font-black text-[10px] sm:text-xs tracking-[0.2em] leading-tight uppercase">{t.department || "DEPARTMENT"}</span>
           </div>
 
-          {/* Right - Logo & User Profile */}
+          {/* Right - Controls & User Profile */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-            {/* Logo - Moved to Right */}
-            <Image
-              src="/mowasalat-logo.png"
-              alt="Mowasalat Logo"
-              width={140}
-              height={50}
-              className="h-8 sm:h-10 w-auto object-contain"
-              priority
-            />
 
             {/* Notifications */}
             <NotificationsDropdown userId={user?.dbId || user?.id} role="BASIC" />

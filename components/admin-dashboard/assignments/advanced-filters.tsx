@@ -106,10 +106,13 @@ function MultiSelect({ label, options, selected, onChange, placeholder = "Select
 interface AdvancedFiltersProps {
     search: string
     onSearchChange: (val: string) => void
-    departments: Option[]
+    teams: Option[]
+    designations: Option[] // NEW: Added designations
     locations: Option[]
-    selectedDepts: string[]
-    onDeptsChange: (val: string[]) => void
+    selectedTeams: string[]
+    onTeamsChange: (val: string[]) => void
+    selectedDesignations: string[] // NEW: Added selectedDesignations
+    onDesignationsChange: (val: string[]) => void // NEW: Added onDesignationsChange
     selectedDepots: string[]
     onDepotsChange: (val: string[]) => void
     selectedAssignedLocs: string[]
@@ -132,8 +135,9 @@ const statusOptions = [
 
 export function AdvancedFilters({
     search, onSearchChange,
-    departments, locations,
-    selectedDepts, onDeptsChange,
+    teams, designations, locations, // Added designations
+    selectedTeams, onTeamsChange,
+    selectedDesignations, onDesignationsChange, // Added handler
     selectedDepots, onDepotsChange,
     selectedAssignedLocs, onAssignedLocsChange,
     showExtendedFilters = false,
@@ -190,10 +194,18 @@ export function AdvancedFilters({
             )}
 
             <MultiSelect
-                label="Position / Team"
-                options={departments}
-                selected={selectedDepts}
-                onChange={onDeptsChange}
+                label="Team"
+                options={teams}
+                selected={selectedTeams}
+                onChange={onTeamsChange}
+                minWidth="180px"
+            />
+
+            <MultiSelect
+                label="Designation"
+                options={designations}
+                selected={selectedDesignations}
+                onChange={onDesignationsChange}
                 minWidth="180px"
             />
 
@@ -218,7 +230,8 @@ export function AdvancedFilters({
                 whileTap={{ scale: 0.9 }}
                 onClick={() => {
                     onSearchChange("")
-                    onDeptsChange([])
+                    onTeamsChange([])
+                    onDesignationsChange([])
                     onDepotsChange([])
                     onAssignedLocsChange([])
                     onStatusesChange?.([])

@@ -53,6 +53,7 @@ async function main() {
   await prisma.location.deleteMany()
   await prisma.designation.deleteMany()
   await prisma.department.deleteMany()
+  await prisma.team.deleteMany()
 
   // --- 2. Create Master Data ---
   console.log('Creating Master Data...')
@@ -60,6 +61,10 @@ async function main() {
   const departments = []
   const deptNames = ['Operations', 'Safety', 'HR', 'Fleet Maintenance', 'Service Delivery']
   for (const name of deptNames) departments.push(await prisma.department.create({ data: { name } }))
+
+  const teams = []
+  const teamNames = ['Alpha Team', 'Beta Squad', 'Gamma Unit', 'Delta Force', 'Rapid Response']
+  for (const name of teamNames) teams.push(await prisma.team.create({ data: { name } }))
 
   const designations = []
   const desigNames = ['Fleet Captain', 'Senior Operator', 'Safety Supervisor', 'Route Manager', 'Dispatch Officer']
@@ -126,6 +131,7 @@ async function main() {
         password_hash: (Math.random() > 0.1 ? passwordHash : null) as any, // 10% Inactive accounts
         role: Role.BASIC,
         department_id: getRandomItem(departments).id,
+        team_id: getRandomItem(teams).id,
         designation_id: getRandomItem(designations).id,
         home_location_id: getRandomItem(homeLocs).id,
         assigned_location_id: getRandomItem(assignedLocs).id,

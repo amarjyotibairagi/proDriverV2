@@ -14,7 +14,7 @@ async function verify() {
         try {
             const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
             const completion = await openai.chat.completions.create({
-                model: "gpt-4o-mini",
+                model: process.env.OPENAI_MODEL || "codex-5.3",
                 messages: [{ role: "user", content: "ping" }],
                 max_tokens: 5
             });

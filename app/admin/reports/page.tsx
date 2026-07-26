@@ -11,10 +11,10 @@ import { Suspense } from "react";
 
 
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string, to?: string, depotId?: string, departmentId?: string }> }) {
-    const { from, to, depotId, departmentId } = await searchParams
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string, to?: string, depotId?: string, teamId?: string, designationId?: string }> }) {
+    const { from, to, depotId, teamId, designationId } = await searchParams
     const [stats, filters] = await Promise.all([
-        getReportStats({ from, to }, { depotId, departmentId }),
+        getReportStats({ from, to }, { depotId, teamId, designationId }),
         getFilterOptions()
     ])
 
@@ -45,7 +45,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                                 from: from ? new Date(from) : undefined,
                                 to: to ? new Date(to) : undefined,
                                 depotId,
-                                departmentId
+                                teamId,
+                                designationId
                             }}
                         />
                     </Suspense>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Play, Image as ImageIcon, Loader2, Settings, Volume2, Music, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Image as ImageIcon, Loader2, Settings, Volume2, Music, X, Video, AlertTriangle, ListOrdered, Zap, Target, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANGUAGES } from "@/lib/languages";
 import { getAudioConfig } from "@/app/actions/module-editor";
@@ -34,6 +34,10 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
     const [audioDuration, setAudioDuration] = useState(0);
     const [quizSelections, setQuizSelections] = useState<Record<string, string>>({});
     const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
+    const [sliderIndices, setSliderIndices] = useState<Record<string, number>>({});
+    const [sequenceOrder, setSequenceOrder] = useState<Record<string, any[]>>({});
+    const [sequenceChecker, setSequenceChecker] = useState<Record<string, boolean | null>>({});
+    const [splitResults, setSplitResults] = useState<Record<string, string | null>>({});
 
     // Audio Settings
     const [showSettings, setShowSettings] = useState(false);
@@ -91,6 +95,10 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
             setAnimationsDone(false);
             setQuizSelections({});
             setQuizResults({});
+            setSliderIndices({});
+            setSequenceOrder({});
+            setSequenceChecker({});
+            setSplitResults({});
             onIndexChange(safeIndex + 1);
         }
     }
@@ -117,6 +125,10 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
             setIsPlayerLoading(true);
             setHasStarted(false);
             setQuizSelections({});
+            setSliderIndices({});
+            setSequenceOrder({});
+            setSequenceChecker({});
+            setSplitResults({});
             setTimeout(() => {
                 setIsPlayerLoading(false);
             }, 1000);
@@ -399,7 +411,7 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
                                                     style={{
                                                         position: 'relative',
                                                         width: '100%',
-                                                        height: el.type === 'image' ? `${el.style.height || 30}%` : 'auto',
+                                                        height: (el.type === 'image' || el.type === 'video') ? `${el.style.height || 30}%` : 'auto',
                                                         zIndex: 1,
                                                         alignSelf: 'center'
                                                     }}
@@ -426,6 +438,22 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
                                                                 <div className="flex flex-col items-center justify-center text-slate-600">
                                                                     <ImageIcon className="w-8 h-8 mb-1 opacity-50" />
                                                                     <span className="text-[10px] font-bold uppercase tracking-wider">No Image</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : el.type === 'video' ? (
+                                                        <div className={`w-full h-full overflow-hidden rounded-lg shadow-sm flex items-center justify-center bg-black`}>
+                                                            {el.content ? (
+                                                                <video
+                                                                    src={el.content}
+                                                                    controls
+                                                                    className="w-full h-full object-contain"
+                                                                    style={{ opacity: el.style.opacity ?? 1 }}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex flex-col items-center justify-center text-slate-600">
+                                                                    <Video className="w-8 h-8 mb-1 opacity-50" />
+                                                                    <span className="text-[10px] font-bold uppercase tracking-wider">No Video</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -483,6 +511,162 @@ export function MobileSimulator({ data, slides, mode, currentIndex, onIndexChang
                                                                         </button>
                                                                     );
                                                                 })}
+                                                            </div>
+                                                        </div>
+                                                    ) : el.type === 'image-slider' ? (
+                                                        <div className="w-full h-full flex flex-col gap-2">
+                                                            {el.sliderSlides && el.sliderSlides.length > 0 ? (
+                                                                <div className="relative w-full aspect-video bg-black/40 rounded-lg overflow-hidden border border-white/10 flex flex-col">
+                                                                    <div className="flex-1 relative overflow-hidden">
+                                                                        <AnimatePresence mode="wait">
+                                                                            <motion.img
+                                                                                key={sliderIndices[el.id] || 0}
+                                                                                src={el.sliderSlides[sliderIndices[el.id] || 0].imageUrl}
+                                                                                initial={{ opacity: 0, x: 20 }}
+                                                                                animate={{ opacity: 1, x: 0 }}
+                                                                                exit={{ opacity: 0, x: -20 }}
+                                                                                transition={{ duration: 0.3 }}
+                                                                                className="w-full h-full object-contain"
+                                                                                alt="Slide"
+                                                                            />
+                                                                        </AnimatePresence>
+                                                                    </div>
+                                                                    <div className="bg-slate-900/90 backdrop-blur p-2 border-t border-white/10 flex items-center justify-between gap-2">
+                                                                        <button
+                                                                            onClick={() => setSliderIndices(prev => ({ ...prev, [el.id]: Math.max(0, (prev[el.id] || 0) - 1) }))}
+                                                                            disabled={(sliderIndices[el.id] || 0) === 0}
+                                                                            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30"
+                                                                        >
+                                                                            <ChevronLeft className="w-4 h-4" />
+                                                                        </button>
+                                                                        <div className="flex-1 text-center">
+                                                                            <p className="text-xs font-medium text-white line-clamp-2">
+                                                                                {el.sliderSlides[sliderIndices[el.id] || 0].description}
+                                                                            </p>
+                                                                            <div className="flex justify-center gap-1 mt-1">
+                                                                                {el.sliderSlides.map((_, idx) => (
+                                                                                    <div
+                                                                                        key={idx}
+                                                                                        className={`w-1 h-1 rounded-full transition-colors ${(sliderIndices[el.id] || 0) === idx ? 'bg-teal-500' : 'bg-white/20'}`}
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => setSliderIndices(prev => ({ ...prev, [el.id]: Math.min((el.sliderSlides?.length || 1) - 1, (prev[el.id] || 0) + 1) }))}
+                                                                            disabled={(sliderIndices[el.id] || 0) === (el.sliderSlides?.length || 1) - 1}
+                                                                            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30"
+                                                                        >
+                                                                            <ChevronRight className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-full aspect-video flex items-center justify-center bg-slate-800/50 rounded-lg border border-white/10 text-slate-500 text-xs">
+                                                                    No slides available
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : el.type === 'sequence-sorter' ? (
+                                                        <div className="w-full space-y-4 px-4 py-2">
+                                                            <div className="text-sm font-bold text-white mb-2">Arrange in correct order:</div>
+                                                            <div className="space-y-2">
+                                                                {(sequenceOrder[el.id] || el.sequenceSteps || []).map((step: any, idx: number, arr: any[]) => (
+                                                                    <div key={step.id} className={`bg-slate-800 border ${sequenceChecker[el.id] !== undefined ? (sequenceChecker[el.id] ? (step.correctOrder === idx + 1 ? 'border-green-500/50' : 'border-red-500/50') : 'border-white/10') : 'border-white/10'} p-3 rounded-lg flex items-center justify-between gap-3`}>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-mono text-slate-400">
+                                                                                {idx + 1}
+                                                                            </div>
+                                                                            <span className="text-xs text-slate-200">{step.text}</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <button
+                                                                                disabled={idx === 0 || !!sequenceChecker[el.id]}
+                                                                                onClick={() => {
+                                                                                    if (!isPlaying) return;
+                                                                                    const newOrder = [...(sequenceOrder[el.id] || el.sequenceSteps || [])];
+                                                                                    [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+                                                                                    setSequenceOrder({ ...sequenceOrder, [el.id]: newOrder });
+                                                                                    setSequenceChecker({ ...sequenceChecker, [el.id]: null }); // Reset check
+                                                                                }}
+                                                                                className="p-1 hover:bg-white/10 rounded text-slate-400 disabled:opacity-30"
+                                                                            >
+                                                                                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-current" />
+                                                                            </button>
+                                                                            <button
+                                                                                disabled={idx === arr.length - 1 || !!sequenceChecker[el.id]}
+                                                                                onClick={() => {
+                                                                                    if (!isPlaying) return;
+                                                                                    const newOrder = [...(sequenceOrder[el.id] || el.sequenceSteps || [])];
+                                                                                    [newOrder[idx + 1], newOrder[idx]] = [newOrder[idx], newOrder[idx + 1]];
+                                                                                    setSequenceOrder({ ...sequenceOrder, [el.id]: newOrder });
+                                                                                    setSequenceChecker({ ...sequenceChecker, [el.id]: null });
+                                                                                }}
+                                                                                className="p-1 hover:bg-white/10 rounded text-slate-400 disabled:opacity-30"
+                                                                            >
+                                                                                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-current" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const current = sequenceOrder[el.id] || el.sequenceSteps || [];
+                                                                    const isCorrect = current.every((s: any, i: number) => s.correctOrder === i + 1);
+                                                                    setSequenceChecker({ ...sequenceChecker, [el.id]: isCorrect });
+                                                                }}
+                                                                disabled={sequenceChecker[el.id] === true}
+                                                                className={`w-full py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors ${sequenceChecker[el.id] === true ? 'bg-green-500 text-slate-900' : 'bg-blue-600 text-white hover:bg-blue-500'}`}
+                                                            >
+                                                                {sequenceChecker[el.id] === true ? 'Correct' : 'Check Order'}
+                                                            </button>
+                                                        </div>
+                                                    ) : el.type === 'split-second' ? (
+                                                        <div className="w-full flex flex-col gap-4">
+                                                            {/* Media */}
+                                                            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-white/10">
+                                                                {el.content && el.content.match(/\.(mp4|webm)$/i) ? (
+                                                                    <video src={el.content} className="w-full h-full object-cover" autoPlay muted loop />
+                                                                ) : (
+                                                                    el.content && <img src={el.content} className="w-full h-full object-cover" alt="Scenario" />
+                                                                )}
+
+                                                                {/* Result Overlay */}
+                                                                {splitResults[el.id] && (
+                                                                    <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm ${splitResults[el.id] === 'correct' ? 'text-green-500' : 'text-rose-500'}`}>
+                                                                        {splitResults[el.id] === 'correct' ? <CheckCircle2 className="w-12 h-12 mb-2" /> : <X className="w-12 h-12 mb-2" />}
+                                                                        <h3 className="text-lg font-black uppercase tracking-widest">{splitResults[el.id] === 'correct' ? 'Excellent' : 'Risk Detected'}</h3>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Buttons */}
+                                                            <div className="grid grid-cols-2 gap-3 px-4">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (splitResults[el.id]) return;
+                                                                        const isCorrect = el.splitOptions?.correctOptionId === 'A';
+                                                                        setSplitResults({ ...splitResults, [el.id]: isCorrect ? 'correct' : 'incorrect' });
+                                                                    }}
+                                                                    disabled={!!splitResults[el.id]}
+                                                                    className={`p-4 rounded-xl border border-white/10 bg-slate-800 hover:bg-slate-700 text-white transition-colors flex flex-col items-center gap-1 ${splitResults[el.id] && el.splitOptions?.correctOptionId === 'A' ? 'ring-2 ring-green-500' : ''}`}
+                                                                >
+                                                                    <span className="text-[10px] uppercase text-slate-400">Option A</span>
+                                                                    <span className="text-sm font-bold text-center">{el.splitOptions?.optionA?.text || 'Option A'}</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (splitResults[el.id]) return;
+                                                                        const isCorrect = el.splitOptions?.correctOptionId === 'B';
+                                                                        setSplitResults({ ...splitResults, [el.id]: isCorrect ? 'correct' : 'incorrect' });
+                                                                    }}
+                                                                    disabled={!!splitResults[el.id]}
+                                                                    className={`p-4 rounded-xl border border-white/10 bg-slate-800 hover:bg-slate-700 text-white transition-colors flex flex-col items-center gap-1 ${splitResults[el.id] && el.splitOptions?.correctOptionId === 'B' ? 'ring-2 ring-green-500' : ''}`}
+                                                                >
+                                                                    <span className="text-[10px] uppercase text-slate-400">Option B</span>
+                                                                    <span className="text-sm font-bold text-center">{el.splitOptions?.optionB?.text || 'Option B'}</span>
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     ) : (

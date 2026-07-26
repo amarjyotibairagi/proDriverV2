@@ -9,7 +9,8 @@ export interface AssignmentFilters {
     search?: string
     statuses?: string[]
     moduleIds?: string[]
-    departmentIds?: string[]
+    teamIds?: string[] // Renamed from departmentIds
+    designationIds?: string[] // NEW
     depotIds?: string[]
     assignedLocationIds?: string[]
 }
@@ -51,8 +52,11 @@ export async function getAssignments(page: number = 1, filters: AssignmentFilter
                 { employee_id: { contains: filters.search, mode: 'insensitive' } }
             ]
         }
-        if (filters.departmentIds && filters.departmentIds.length > 0) {
-            userWhere.department_id = { in: filters.departmentIds }
+        if (filters.teamIds && filters.teamIds.length > 0) {
+            userWhere.team_id = { in: filters.teamIds } // Changed to team_id
+        }
+        if (filters.designationIds && filters.designationIds.length > 0) {
+            userWhere.designation_id = { in: filters.designationIds } // NEW
         }
         if (filters.depotIds && filters.depotIds.length > 0) {
             userWhere.home_location_id = { in: filters.depotIds }
@@ -230,7 +234,8 @@ export async function bulkAssign({
 // --- FETCH USERS FOR ASSIGNMENT ---
 export interface UserFilters {
     search?: string
-    departmentIds?: string[]
+    teamIds?: string[] // Changed
+    designationIds?: string[] // NEW
     depotIds?: string[]
     assignedLocationIds?: string[]
 }
@@ -249,8 +254,12 @@ export async function getUsersForAssignment(filters: UserFilters = {}) {
             ]
         }
 
-        if (filters.departmentIds && filters.departmentIds.length > 0) {
-            where.department_id = { in: filters.departmentIds }
+        if (filters.teamIds && filters.teamIds.length > 0) {
+            where.team_id = { in: filters.teamIds } // Changed
+        }
+
+        if (filters.designationIds && filters.designationIds.length > 0) {
+            where.designation_id = { in: filters.designationIds } // NEW
         }
 
         if (filters.depotIds && filters.depotIds.length > 0) {

@@ -27,16 +27,19 @@ interface ReportsDashboardProps {
         modulePerformance: { name: string, averageScore: number, attempts: number }[]
         depotStats: { name: string, completed: number, total: number, percentage: number }[]
         teamStats: { name: string, completed: number, total: number, percentage: number }[]
+        designationStats: { name: string, completed: number, total: number, percentage: number }[]
     }
     filters?: {
         depots: { id: string, name: string }[]
-        departments: { id: string, name: string }[]
+        teams: { id: string, name: string }[]
+        designations: { id: string, name: string }[]
     }
     currentFilters?: {
         from?: Date
         to?: Date
         depotId?: string
-        departmentId?: string
+        teamId?: string
+        designationId?: string
     }
 }
 
@@ -56,7 +59,8 @@ export function ReportsDashboard({ data, filters, currentFilters }: ReportsDashb
         if (currentFilters?.from) newParams.set('from', currentFilters.from.toISOString())
         if (currentFilters?.to) newParams.set('to', currentFilters.to.toISOString())
         if (currentFilters?.depotId) newParams.set('depotId', currentFilters.depotId)
-        if (currentFilters?.departmentId) newParams.set('departmentId', currentFilters.departmentId)
+        if (currentFilters?.teamId) newParams.set('teamId', currentFilters.teamId)
+        if (currentFilters?.designationId) newParams.set('designationId', currentFilters.designationId)
 
         // Merge new params
         Object.keys(params).forEach(key => {
@@ -281,11 +285,22 @@ export function ReportsDashboard({ data, filters, currentFilters }: ReportsDashb
 
                 <select
                     className="bg-slate-900/50 border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-indigo-500/50"
-                    value={currentFilters?.departmentId || 'all'}
-                    onChange={(e) => handleFilterChange('departmentId', e.target.value)}
+                    value={currentFilters?.teamId || 'all'}
+                    onChange={(e) => handleFilterChange('teamId', e.target.value)}
                 >
-                    <option value="all">All Departments</option>
-                    {filters?.departments.map(d => (
+                    <option value="all">All Teams</option>
+                    {filters?.teams.map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                </select>
+
+                <select
+                    className="bg-slate-900/50 border border-white/10 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:border-indigo-500/50"
+                    value={currentFilters?.designationId || 'all'}
+                    onChange={(e) => handleFilterChange('designationId', e.target.value)}
+                >
+                    <option value="all">All Designations</option>
+                    {filters?.designations.map(d => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                 </select>
@@ -357,6 +372,7 @@ export function ReportsDashboard({ data, filters, currentFilters }: ReportsDashb
                                 modulePerformance={data.modulePerformance}
                                 depotStats={data.depotStats}
                                 teamStats={data.teamStats}
+                                designationStats={data.designationStats}
                                 onChartClick={handleDrillDown}
                             />
                         </motion.div>

@@ -55,15 +55,11 @@ export function Header() {
         className="w-full bg-black/40 backdrop-blur-md border-b border-[#D4AF37]/20"
       >
         <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3">
-          {/* Left - Company Logo */}
+          {/* Left - Company Branding */}
           <div ref={logoRef} className="flex items-center gap-3 flex-shrink-0">
-            <Image 
-              src="/mowasalat-logo.png" 
-              alt="Mowasalat Logo" 
-              width={140} 
-              height={50}
-              className="h-8 sm:h-10 w-auto object-contain"
-            />
+            <span className="text-white font-black text-sm sm:text-base tracking-[0.25em] italic">
+              PRO<span className="text-[#2BB5A8]">DRIVER</span>
+            </span>
           </div>
 
           {/* Right - User Profile */}

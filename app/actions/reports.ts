@@ -5,7 +5,7 @@ import { Role } from "../../generated/prisma-client"
 
 export async function getReportStats(
     dateRange?: { from?: Date | string, to?: Date | string },
-    filters?: { depotId?: string, departmentId?: string }
+    filters?: { depotId?: string, teamId?: string, designationId?: string }
 ) {
     try {
         const fromDate = dateRange?.from ? new Date(dateRange.from) : undefined
@@ -32,10 +32,11 @@ export async function getReportStats(
             is_test_account: false
         }
         if (filters?.depotId && filters.depotId !== 'all') userScope.home_location_id = filters.depotId
-        if (filters?.departmentId && filters.departmentId !== 'all') userScope.department_id = filters.departmentId
+        if (filters?.teamId && filters.teamId !== 'all') userScope.team_id = filters.teamId
+        if (filters?.designationId && filters.designationId !== 'all') userScope.designation_id = filters.designationId
 
         // Run independent queries in parallel
-        const [trainingStats, testMestats, moduleScores, depots, teams] = await Promise.all([
+        const [trainingStats, testMestats, moduleScores, depots, teams, designations] = await Promise.all([
             // 1. Training Completion Status
             prisma.trainingAssignment.groupBy({
                 by: ['training_status'],
@@ -85,9 +86,27 @@ export async function getReportStats(
                 }
             }),
             // 5. Team Stats
-            prisma.department.findMany({
+            prisma.team.findMany({
                 where: {
-                    id: filters?.departmentId && filters.departmentId !== 'all' ? filters.departmentId : undefined
+                    id: filters?.teamId && filters.teamId !== 'all' ? filters.teamId : undefined
+                },
+                select: {
+                    name: true,
+                    users: {
+                        where: userScope,
+                        select: {
+                            assignments_received: {
+                                select: { training_status: true },
+                                where: activityDateFilter
+                            }
+                        }
+                    }
+                }
+            }),
+            // 6. Designation Stats
+            prisma.designation.findMany({
+                where: {
+                    id: filters?.designationId && filters.designationId !== 'all' ? filters.designationId : undefined
                 },
                 select: {
                     name: true,
@@ -131,7 +150,7 @@ export async function getReportStats(
                 total,
                 percentage: total > 0 ? Math.round((completed / total) * 100) : 0
             }
-        }).filter(d => d.total > 0).sort((a, b) => b.percentage - a.percentage)
+        }).sort((a, b) => b.percentage - a.percentage)
 
         const teamStats = teams.map(t => {
             let completed = 0
@@ -148,7 +167,24 @@ export async function getReportStats(
                 total,
                 percentage: total > 0 ? Math.round((completed / total) * 100) : 0
             }
-        }).filter(t => t.total > 0).sort((a, b) => b.percentage - a.percentage)
+        }).sort((a, b) => b.percentage - a.percentage)
+
+        const designationStats = designations.map((d: any) => {
+            let completed = 0
+            let total = 0
+            d.users.forEach((u: any) => {
+                u.assignments_received.forEach((a: any) => {
+                    total++
+                    if (a.training_status === 'COMPLETED') completed++
+                })
+            })
+            return {
+                name: d.name,
+                completed,
+                total,
+                percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+            }
+        }).sort((a: any, b: any) => b.percentage - a.percentage)
 
         // 6. Summary Stats (KPI Cards)
         const totalUsers = await prisma.user.count({ where: { role: Role.BASIC, ...userScope } })
@@ -205,7 +241,8 @@ export async function getReportStats(
             testStats: testMestats.map(s => ({ status: String(s.test_status), count: s._count.id })),
             modulePerformance,
             depotStats,
-            teamStats
+            teamStats,
+            designationStats
         }
 
     } catch (error) {
@@ -216,7 +253,8 @@ export async function getReportStats(
             testStats: [],
             modulePerformance: [],
             depotStats: [],
-            teamStats: []
+            teamStats: [],
+            designationStats: []
         }
     }
 }
@@ -304,21 +342,25 @@ export async function getDrillDownData(params: {
 
 export async function getFilterOptions() {
     try {
-        const [depots, departments] = await Promise.all([
+        const [depots, teams, designations] = await Promise.all([
             prisma.location.findMany({
                 where: { type: 'HOME' },
                 select: { id: true, name: true },
                 orderBy: { name: 'asc' }
             }),
-            prisma.department.findMany({
+            prisma.team.findMany({
+                select: { id: true, name: true },
+                orderBy: { name: 'asc' }
+            }),
+            prisma.designation.findMany({
                 select: { id: true, name: true },
                 orderBy: { name: 'asc' }
             })
         ])
 
-        return { depots, departments }
+        return { depots, teams, designations }
     } catch (error) {
         console.error("Failed to fetch filter options", error)
-        return { depots: [], departments: [] }
+        return { depots: [], teams: [], designations: [] }
     }
 }
